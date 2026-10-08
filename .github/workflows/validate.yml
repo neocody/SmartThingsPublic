@@ -1,0 +1,25 @@
+# This public fork uses free standard GitHub-hosted Linux.
+name: Groovy syntax validation
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: validation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    if: github.event_name != 'pull_request' || (!github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install parser from Ubuntu packages
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends groovy
+      - name: Parse device handlers and smart apps without executing them
+        run: groovy scripts/check-syntax.groovy
